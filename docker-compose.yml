@@ -1,35 +1,10 @@
 services:
-  traefik:
-    image: "traefik:v2.10"
-    container_name: "traefik"
-    command:
-      #- "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - "./letsencrypt:/letsencrypt"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - web_gateway
-
   web:
     build: .
     container_name: tib_saas_app
     restart: always
-    # ports:  <-- Traefik manages ports now, but we keep custom port mapping if needed for direct access, or remove it.
-    #   - "8000:8000" 
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.tib.rule=Host(`tib.localhost`)"
-      - "traefik.http.routers.tib.entrypoints=web"
-      - "traefik.http.services.tib.loadbalancer.server.port=8000"
+    ports:
+      - "8001:8000" # Expose on 8001 to avoid conflict with existing site
     volumes:
       - ./data:/app/data
       - ./static/uploads:/app/static/uploads
@@ -37,14 +12,10 @@ services:
       - .env
     environment:
       - DATABASE_URL=sqlite:///data/tib_saas.db
-    networks:
-      - web_gateway
+    # networks: # Network not needed if strictly local proxy
+    #   - web_gateway
 
 volumes:
   data:
-  letsencrypt:
 
 
-networks:
-  web_gateway:
-    driver: bridge
